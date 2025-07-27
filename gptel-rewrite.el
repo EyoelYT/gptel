@@ -521,7 +521,7 @@ By default, gptel uses the directive associated with the `rewrite'
    [""
     (gptel--preset
      :if (lambda () (or (get-char-property (point) 'gptel-rewrite)
-                   (use-region-p)))
+                   (gptel-region-active-p)))
      :key "@" :format "%d"
      :description
      (lambda ()
@@ -532,7 +532,7 @@ By default, gptel uses the directive associated with the `rewrite'
   ;; FIXME: We are requiring `gptel-transient' because of this suffix, perhaps
   ;; we can get find some way around that?
   [:description "Context for rewrite"
-   :if use-region-p
+   :if gptel-region-active-p
    (gptel--infix-context-remove-all :key "-d")
    (gptel--suffix-context-buffer :key "C" :format "  %k %d")]
   [[:description "Diff Options"
@@ -553,12 +553,12 @@ By default, gptel uses the directive associated with the `rewrite'
     (gptel--suffix-rewrite-ediff)]]
   [[:description "Rewrite"
     :if (lambda () (or (get-char-property (point) 'gptel-rewrite)
-                  (use-region-p)))
+                  (gptel-region-active-p)))
     (gptel--suffix-rewrite)]
    ["Dry Run"
     :if (lambda () (and (or gptel-log-level gptel-expert-commands)
                    (or (get-char-property (point) 'gptel-rewrite)
-                       (use-region-p))))
+                       (gptel-region-active-p))))
     ("I" "Inspect query (Lisp)"
      (lambda ()
        "Inspect the query that will be sent as a lisp object."
@@ -576,7 +576,7 @@ By default, gptel uses the directive associated with the `rewrite'
         'json)))]]
   (interactive)
   (gptel--rewrite-sanitize-overlays)
-  (unless (or gptel--rewrite-overlays (use-region-p))
+  (unless (or gptel--rewrite-overlays (gptel-region-active-p))
     (user-error "`gptel-rewrite' requires an active region or rewrite in progress."))
   (unless gptel--rewrite-message
     (setq gptel--rewrite-message "Rewrite: "))
@@ -660,7 +660,7 @@ generated from functions."
          (gptel-use-context
           (and gptel-use-context (if nosystem 'user 'system)))
          (prompt (list (or (get-char-property (point) 'gptel-rewrite)
-                           (buffer-substring-no-properties (region-beginning) (region-end)))
+                           (buffer-substring-no-properties (gptel-region-beginning) (gptel-region-end)))
                        "What is the required change?"
                        (or rewrite-message gptel--rewrite-message))))
     (when nosystem
@@ -673,7 +673,7 @@ generated from functions."
              :stream gptel-stream
              :context
              (let ((ov (or (cdr-safe (get-char-property-and-overlay (point) 'gptel-rewrite))
-                           (make-overlay (region-beginning) (region-end) nil t))))
+                           (make-overlay (gptel-region-beginning) (gptel-region-end) nil t))))
                (overlay-put ov 'category 'gptel)
                (overlay-put ov 'evaporate t)
                ;; NOTE: Switch to `generate-new-buffer' after we drop Emacs 27.1 (#724)
@@ -682,7 +682,7 @@ generated from functions."
              :callback #'gptel--rewrite-callback)
       ;; Move back so that the cursor is on the overlay when done.
       (unless (get-char-property (point) 'gptel-rewrite)
-        (when (= (point) (region-end)) (backward-char 1)))
+        (when (= (point) (gptel-region-end)) (backward-char 1)))
       (deactivate-mark))))
 
 ;; Allow this to be called non-interactively for dry runs

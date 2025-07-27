@@ -199,8 +199,8 @@ If the region is active limit the prompt text to the region contents.
 Otherwise the prompt text is constructed from the contents of the
 current buffer up to point, or PROMPT-END if provided.  Its contents
 depend on the value of `gptel-org-branching-context', which see."
-  (when (use-region-p)
-    (narrow-to-region (region-beginning) (region-end)))
+  (when (gptel-region-active-p)
+    (narrow-to-region (gptel-region-beginning) (gptel-region-end)))
   (if prompt-end
       (goto-char prompt-end)
     (setq prompt-end (point)))

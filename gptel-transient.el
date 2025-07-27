@@ -128,9 +128,9 @@ Meant to be called when `gptel-menu' is active."
   (save-excursion
     ;; Move point to overlay position
     (cond
-     ((use-region-p)
-      (if (pos-visible-in-window-p (region-beginning))
-          (goto-char (region-beginning))))
+     ((gptel-region-active-p)
+      (if (pos-visible-in-window-p (gptel-region-beginning))
+          (goto-char (gptel-region-beginning))))
      ((gptel--in-response-p)
       (gptel-beginning-of-response)
       (skip-chars-forward "\n \t"))
@@ -363,9 +363,9 @@ which see."
 	             (let* ((transient-current-command (oref transient--prefix command))
 	                    (transient-current-suffixes transient--suffixes))
 	               (transient-args transient-current-command))))
-           (lbeg (line-number-at-pos (if (use-region-p) (region-beginning)
+           (lbeg (line-number-at-pos (if (gptel-region-active-p) (gptel-region-beginning)
                                        (point-min))))
-           (lend (line-number-at-pos (if (use-region-p) (region-end)
+           (lend (line-number-at-pos (if (gptel-region-active-p) (gptel-region-end)
                                        (point))))
            (ltext (ptv (if (> lend lbeg)
                            (format " (lines %d-%d)" lbeg lend)
@@ -411,7 +411,7 @@ which see."
                      (if dest (concat (pth ", response to ") dest)
                        (concat (pth ", insert response at point")))))
             ((member "i" args)
-             (let* ((reg (use-region-p))
+             (let* ((reg (gptel-region-active-p))
                     (src (ptv (if reg "selection" (buffer-name)))))
                (if dest (concat (pth "Send ") src ltext context (pth ", with response to ")
                                 (ptv dest) (pth "; kill") ltext
@@ -419,7 +419,7 @@ which see."
                  (concat (pth "Replace ") src ltext (pth " with response")
                          (and context
                               (concat (pth " ( with") (substring context 11) " )"))))))
-            ((use-region-p)
+            ((gptel-region-active-p)
              (concat (pth "Send ") (ptv "selection") ltext
                      context (if dest (concat (pth ", with response to ") dest)
                                (concat (pth ", insert response at region end")))))
@@ -758,7 +758,7 @@ Also format its value in the Transient menu."
     ("k" "Kill-ring" "k")]]
   [[:description (lambda () (concat (and gptel--rewrite-overlays "Continue ")
                                "Rewrite"))
-    :if (lambda () (or (use-region-p)
+    :if (lambda () (or (gptel-region-active-p)
                   (and gptel--rewrite-overlays
                        (gptel--rewrite-sanitize-overlays))))
     ("r"
@@ -1258,7 +1258,7 @@ supports.  See `gptel-track-media' for more information."
   "Add current region to gptel's context."
   :transient 'transient--do-stay
   :key "-r"
-  :if (lambda () (or (use-region-p)
+  :if (lambda () (or (gptel-region-active-p)
                 (and (fboundp 'gptel-context--at-point)
                      (gptel-context--at-point))))
   :description
@@ -1503,9 +1503,9 @@ This sets the variable `gptel-include-tool-results', which see."
                                #'gptel-preset-capf nil t))
              (read-string
               (format "Ask %s: " (gptel-backend-name gptel-backend))
-              (and (use-region-p)
+              (and (gptel-region-active-p)
                    (buffer-substring-no-properties
-                    (region-beginning) (region-end))))))
+                    (gptel-region-beginning) (gptel-region-end))))))
           ((member "y" args)
            (unless (car-safe kill-ring)
              (user-error "`kill-ring' is empty!  Nothing to send"))
@@ -1548,9 +1548,9 @@ This sets the variable `gptel-include-tool-results', which see."
                                         ;context, not the prompt used for the
                                         ;request itself
              (or prompt
-                 (if (use-region-p)
-                     (buffer-substring-no-properties (region-beginning)
-                                                     (region-end))
+                 (if (gptel-region-active-p)
+                     (buffer-substring-no-properties (gptel-region-beginning)
+                                                     (gptel-region-end))
                    (buffer-substring-no-properties
                     (save-excursion
                       (text-property-search-backward
@@ -1623,13 +1623,13 @@ This sets the variable `gptel-include-tool-results', which see."
       (when in-place
         (if (or buffer-read-only (get-char-property (point) 'read-only))
             (message "Not replacing prompt: region is read-only")
-          (let ((beg (if (use-region-p)
-                         (region-beginning)
+          (let ((beg (if (gptel-region-active-p)
+                         (gptel-region-beginning)
                        (max (previous-single-property-change
                              (point) 'gptel nil (point-min))
                             (previous-single-property-change
                              (point) 'read-only nil (point-min)))))
-                (end (if (use-region-p) (region-end) (point))))
+                (end (if (gptel-region-active-p) (gptel-region-end) (point))))
             (unless output-to-other-buffer-p
               ;; store the killed text in gptel-history
               (gptel--attach-response-history

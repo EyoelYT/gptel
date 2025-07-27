@@ -1194,6 +1194,29 @@ FILE is assumed to exist and be a regular file."
                           :no-line-break)
     (buffer-string)))
 
+;;;; Region handling
+(defun gptel-region-active-p ()
+  "Return non-nil if selection or evil visual region is active"
+  (or (and (fboundp 'evil-visual-state-p)
+           (evil-visual-state-p))
+      (use-region-p)))
+
+(defun gptel-region-beginning ()
+  "Return beginning position of selection or evil visual region"
+  (or (and (fboundp 'evil-visual-state-p)
+           (evil-visual-state-p)
+           (markerp evil-visual-beginning)
+           (marker-position evil-visual-beginning))
+      (region-beginning)))
+
+(defun gptel-region-end ()
+  "Return beginning position of selection or evil visual region"
+  (or (and (fboundp 'evil-visual-state-p)
+           (evil-visual-state-p)
+           (markerp evil-visual-end)
+           (marker-position evil-visual-end))
+      (region-end)))
+
 ;;;; Response text recognition
 
 (defun gptel--get-buffer-bounds ()
@@ -2469,7 +2492,7 @@ ignored, but they are still available in the INFO plist passed
 to CALLBACK for you to use.
 
 BUFFER defaults to the current buffer, and POSITION to the value
-of (point) or (region-end), depending on whether the region is
+of (point) or (gptel-region-end), depending on whether the region is
 active.
 
 CONTEXT is any additional data needed for the callback to run. It
@@ -2536,8 +2559,8 @@ be used to rerun or continue the request at a later time."
   (let* ((start-marker
           (cond
            ((null position)
-            (if (use-region-p)
-                (set-marker (make-marker) (region-end))
+            (if (gptel-region-active-p)
+                (set-marker (make-marker) (gptel-region-end))
               (gptel--at-word-end (point-marker))))
            ((markerp position) position)
            ((integerp position)
@@ -2910,8 +2933,8 @@ current buffer up to point, or PROMPT-END if provided."
           (require 'gptel-org)
           ;; Also handles regions in Org mode
           (gptel-org--create-prompt-buffer prompt-end))
-         ((use-region-p)
-          (let ((rb (region-beginning)) (re (region-end)))
+         ((gptel-region-active-p)
+          (let ((rb (gptel-region-beginning)) (re (gptel-region-end)))
             (gptel--with-buffer-copy buf rb re
               (current-buffer))))
          (t (unless prompt-end (setq prompt-end (point)))
@@ -3261,9 +3284,9 @@ INTERACTIVEP is t when gptel is called interactively."
               (setq gptel-api-key
                     (read-passwd
                      (format "%s API key: " backend-name)))))
-           (and (use-region-p)
-                (buffer-substring (region-beginning)
-                                  (region-end)))
+           (and (gptel-region-active-p)
+                (buffer-substring (gptel-region-beginning)
+                                  (gptel-region-end)))
            t)))
   (with-current-buffer (get-buffer-create name)
     (cond ;Set major mode
